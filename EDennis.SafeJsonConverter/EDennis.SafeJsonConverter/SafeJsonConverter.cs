@@ -23,14 +23,47 @@ namespace EDennis.JsonUtils {
     public class SafeJsonConverter : JsonConverter {
 
         /// <summary>
+        /// Constructs a new SafeJsonConverter with the provided
+        /// maximum depth and properties to ignore
+        /// </summary>
+        /// <param name="maxDepth">Maximum depth of the object graph</param>
+        /// <param name="propertiesToIgnore">Names of properties to ignore in object graph (this is a global ignore)</param>
+        public SafeJsonConverter(int maxDepth, string[] propertiesToIgnore) {
+            MaxDepth = maxDepth;
+            PropertiesToIgnore = propertiesToIgnore;
+        }
+
+        /// <summary>
+        /// Constructs a new SafeJsonConverter with the provided
+        /// maximum depth
+        /// </summary>
+        /// <param name="maxDepth">Maximum depth of the object graph</param>
+        public SafeJsonConverter(int maxDepth) {
+            MaxDepth = maxDepth;
+        }
+
+
+        /// <summary>
+        /// Constructs a new SafeJsonConverter with
+        /// default values for MaxDepth (99) and 
+        /// PropertiesToIgnore (empty string)
+        /// </summary>
+        public SafeJsonConverter() {
+            MaxDepth = 99;
+            PropertiesToIgnore = new string[] { };
+        }
+
+        /// <summary>
         /// The maximum depth of object graph for serialization
         /// </summary>
-        public virtual int MaxDepth { get { return 99; } }
+        public virtual int MaxDepth { get; set; }
 
         /// <summary>
         /// Property names that will be ignored during serialization.
         /// </summary>
-        public virtual string[] PropertiesToIgnore { get { return new string[] { }; } }
+        public virtual string[] PropertiesToIgnore { get; set; }
+
+
 
 
         /// <summary>
