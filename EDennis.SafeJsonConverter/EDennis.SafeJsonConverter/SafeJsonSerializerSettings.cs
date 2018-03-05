@@ -17,5 +17,10 @@ namespace EDennis.JsonUtils {
             ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
         }
 
+        public SafeJsonSerializerSettings(int maxDepth, string[] propertiesToIgnore) {
+            Converters = new[] { new SafeJsonConverter(maxDepth,propertiesToIgnore) };
+            ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+        }
+
     }
 }

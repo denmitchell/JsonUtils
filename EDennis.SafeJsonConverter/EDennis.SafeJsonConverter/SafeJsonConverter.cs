@@ -89,7 +89,7 @@ namespace EDennis.JsonUtils {
             // Load JObject from stream
             JObject jObject = JObject.Load(reader);
 
-            return jObject.ToObject(objectType,serializer);
+            return jObject.ToObject(objectType, serializer);
         }
 
         /// <summary>
@@ -197,6 +197,10 @@ namespace EDennis.JsonUtils {
                 if (depth > _maxDepth)
                     return;
 
+                //don't serialize if the property should be ignored
+                if (propertyName != null && _propertiesToIgnore.Contains(propertyName))
+                    return;
+
                 //don't serialize if the list has already been serialized at a different level
                 if (_hashDictionary.ContainsKey(hashCode) && _hashDictionary[hashCode] != depth)
                     return;
@@ -207,7 +211,7 @@ namespace EDennis.JsonUtils {
                         return;
                 }
 
-                
+
                 depth++;  //increment the depth
 
                 //write the propertyName, if it exists
@@ -241,6 +245,10 @@ namespace EDennis.JsonUtils {
                 if (depth > _maxDepth)
                     return;
 
+                //don't serialize if the property should be ignored
+                if (propertyName != null && _propertiesToIgnore.Contains(propertyName))
+                    return;
+
                 //don't serialize if the object's hashcode has already been 
                 //registered at a different depth
                 if (_hashDictionary.ContainsKey(hashCode) && _hashDictionary[hashCode] != depth)
@@ -268,15 +276,15 @@ namespace EDennis.JsonUtils {
                     if (prop.IsCollection && prop.Value != null) {
                         Type t = prop.ElementType;
                         SerializeList(prop.Value as IList, prop.Value.GetHashCode(), prop.Name);
-                    //handle a user object
+                        //handle a user object
                     } else if (prop.IsObject && prop.Value != null) {
                         SerializeObject(prop.Value, prop.Value.GetHashCode(), prop.Name);
-                    //handle a formatted string value
-                    } else if (prop.FormattedValue != null) {
+                        //handle a formatted string value
+                    } else if (prop.FormattedValue != null && !_propertiesToIgnore.Contains(prop.Name)) {
                         jw.WritePropertyName(prop.Name);
                         jw.WriteValue(prop.FormattedValue);
-                    //handle all other values
-                    } else if (!prop.IsCollection && !prop.IsObject) {
+                        //handle all other values
+                    } else if (!prop.IsCollection && !prop.IsObject && !_propertiesToIgnore.Contains(prop.Name)) {
                         jw.WritePropertyName(prop.Name);
                         jw.WriteValue(prop.Value);
                     }
