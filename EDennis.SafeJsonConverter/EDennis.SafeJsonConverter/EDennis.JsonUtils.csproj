@@ -3,11 +3,11 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp2.0</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>0.0.1-alpha</Version>
-    <AssemblyVersion>0.0.0.1</AssemblyVersion>
-    <FileVersion>0.0.0.1</FileVersion>
+    <Version>0.0.3-alpha</Version>
+    <AssemblyVersion>0.0.0.3</AssemblyVersion>
+    <FileVersion>0.0.0.3</FileVersion>
     <Description>Includes a JSON.NET JsonConverter and JsonSerializerSettings class that prevents self-referencing loops and, via subclassing, allows specifying of max-depth for serialization and ignoring of specified properties.</Description>
-    <PackageReleaseNotes>This is a pre-release.  Not for production.</PackageReleaseNotes>
+    <PackageReleaseNotes>Updated SafeJsonConverter's MaxDepth and PropertiesToIgnore properties to be writeable.</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
