@@ -1,0 +1,31 @@
+﻿{
+  "PartId": 1,
+  "PartName": "Nut",
+  "Material": "Brass",
+  "Weight": 12.5,
+  "City": "London",
+  "PartSuppliers": [
+    {
+      "SupplierId": 1,
+      "PartId": 1,
+      "Quantity": 300,
+      "Supplier": {
+        "SupplierId": 1,
+        "SupplierName": "Smith",
+        "Since": "2000-05-05",
+        "City": "London"
+      }
+    },
+    {
+      "SupplierId": 2,
+      "PartId": 1,
+      "Quantity": 300,
+      "Supplier": {
+        "SupplierId": 2,
+        "SupplierName": "Jones",
+        "Since": "2012-10-12",
+        "City": "Paris"
+      }
+    }
+  ]
+}

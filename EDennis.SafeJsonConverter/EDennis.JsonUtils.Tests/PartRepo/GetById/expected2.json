@@ -1,0 +1,53 @@
+﻿{
+  "PartId": 2,
+  "PartName": "Bolt",
+  "Material": "Brass",
+  "Weight": 27.0,
+  "City": "Paris",
+  "PartSuppliers": [
+    {
+      "SupplierId": 1,
+      "PartId": 2,
+      "Quantity": 200,
+      "Supplier": {
+        "SupplierId": 1,
+        "SupplierName": "Smith",
+        "Since": "2000-05-05",
+        "City": "London"
+      }
+    },
+    {
+      "SupplierId": 2,
+      "PartId": 2,
+      "Quantity": 400,
+      "Supplier": {
+        "SupplierId": 2,
+        "SupplierName": "Jones",
+        "Since": "2012-10-12",
+        "City": "Paris"
+      }
+    },
+    {
+      "SupplierId": 3,
+      "PartId": 2,
+      "Quantity": 200,
+      "Supplier": {
+        "SupplierId": 3,
+        "SupplierName": "Blake",
+        "Since": "1995-07-23",
+        "City": "Paris"
+      }
+    },
+    {
+      "SupplierId": 4,
+      "PartId": 2,
+      "Quantity": 200,
+      "Supplier": {
+        "SupplierId": 4,
+        "SupplierName": "Clark",
+        "Since": "2006-11-03",
+        "City": "London"
+      }
+    }
+  ]
+}
