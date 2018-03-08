@@ -22,6 +22,8 @@ namespace EDennis.JsonUtils {
     /// </summary>
     public class SafeJsonConverter : JsonConverter {
 
+        public const int DEFAULT_MAXDEPTH = 99;
+
         /// <summary>
         /// Constructs a new SafeJsonConverter with the provided
         /// maximum depth and properties to ignore
@@ -42,6 +44,16 @@ namespace EDennis.JsonUtils {
             MaxDepth = maxDepth;
         }
 
+        /// <summary>
+        /// Constructs a new SafeJsonConverter with the provided
+        /// array of properties to ignore.  The maximum depth is
+        /// set to 99.
+        /// </summary>
+        /// <param name="propertiesToIgnore">Names of properties to ignore in object graph (this is a global ignore)</param>
+        public SafeJsonConverter(string[] propertiesToIgnore) {
+            PropertiesToIgnore = propertiesToIgnore;
+            MaxDepth = DEFAULT_MAXDEPTH;
+        }
 
         /// <summary>
         /// Constructs a new SafeJsonConverter with

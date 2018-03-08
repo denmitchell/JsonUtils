@@ -27,7 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\EDennis.SafeJsonConverter\EDennis.JsonUtils.csproj" />
+    <ProjectReference Include="..\EDennis.JsonUtils\EDennis.JsonUtils.csproj" />
   </ItemGroup>
 
   <ItemGroup>
