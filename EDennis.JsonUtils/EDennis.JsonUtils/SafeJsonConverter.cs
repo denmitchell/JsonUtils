@@ -7,6 +7,7 @@ using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Reflection;
 using System.Text;
+using System.Linq;
 
 namespace EDennis.JsonUtils {
 
@@ -17,8 +18,12 @@ namespace EDennis.JsonUtils {
     /// for serialization and any properties to ignore during serialization.
     /// The class prevents circular referencing with the following
     /// strategy:
-    ///        The same object can be serialized more than once
-    ///        only at the same depth.
+    ///        (1) A leaf node in the object graph (an object with no navigation
+    ///        properties) can be serialized up to the maximum depth specified;
+    ///                
+    ///        OTHERWISE,
+    ///        (2) The same object can be serialized more than once
+    ///        only at the same depth.  
     /// </summary>
     public class SafeJsonConverter : JsonConverter {
 
@@ -261,9 +266,27 @@ namespace EDennis.JsonUtils {
                 if (propertyName != null && _propertiesToIgnore.Contains(propertyName))
                     return;
 
-                //don't serialize if the object's hashcode has already been 
+                var props = new Properties(obj);
+
+                //if class is decorated with value property, serialize to a simple value
+                var valueProperty = props.GetValueProperty();
+
+                if (valueProperty != null) {
+                    jw.WritePropertyName(propertyName);
+                    var prop = props.Where(p => p.Name == valueProperty).FirstOrDefault();
+                    if (prop == null)
+                        throw new ArgumentOutOfRangeException(
+                            $"JsonSimpleValue Attribute specified on {obj.GetType().Name} attempts to target an undefined property: {propertyName}.");
+                    jw.WriteValue(prop.Value);
+                    return;
+                }
+
+
+                //don't serialize if the object has navigation properties
+                //and the object's hashcode has already been 
                 //registered at a different depth
-                if (_hashDictionary.ContainsKey(hashCode) && _hashDictionary[hashCode] != depth)
+                if (props.HasNavigationProperties() 
+                    && _hashDictionary.ContainsKey(hashCode) && _hashDictionary[hashCode] != depth)
                     return;
 
                 //if the object's hashcode is not already registered, register
@@ -281,7 +304,6 @@ namespace EDennis.JsonUtils {
                 //write the object
                 jw.WriteStartObject();
 
-                var props = new Properties(obj);
 
                 foreach (Property prop in props) {
                     //handle a collection
@@ -313,12 +335,16 @@ namespace EDennis.JsonUtils {
             /// </summary>
             internal class Properties : List<Property> {
 
+                private object _object;
+
                 /// <summary>
                 /// Constructs a new Properties collection, based
                 /// upon the provided object
                 /// </summary>
                 /// <param name="obj">An object containing properties</param>
                 public Properties(object obj) {
+
+                    _object = obj;
 
                     //get the properties via reflection
                     var infoSource = obj.GetType().GetProperties();
@@ -364,6 +390,31 @@ namespace EDennis.JsonUtils {
 
                     }
                 }
+
+                /// <summary>
+                /// Determines if the object has navigation properties (list or object)
+                /// </summary>
+                /// <returns>true if object has a list or object property; false, otherwise</returns>
+                public bool HasNavigationProperties() {
+                    return (this.Where(p => p.IsCollection || p.IsObject).Count() > 0);
+                }
+
+
+                /// <summary>
+                /// Gets the value property defined with JsonSimpleValueAttribute
+                /// </summary>
+                /// <returns>value property or null if JsonSimpleValueAttribute is not
+                /// defined on the current class</returns>
+                public string GetValueProperty() {
+                    var dnAttribute = _object.GetType().GetCustomAttributes(
+                        typeof(JsonSimpleValueAttribute), true
+                    ).FirstOrDefault() as JsonSimpleValueAttribute;
+                    if (dnAttribute != null) {
+                        return dnAttribute.ValueProperty;
+                    }
+                    return null;
+                }
+
 
                 /// <summary>
                 /// Looks for a DisplayFormat attribute, and if found, retrieves
