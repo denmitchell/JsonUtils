@@ -78,7 +78,7 @@ namespace EDennis.JsonUtils {
         /// <summary>
         /// Property names that will be ignored during serialization.
         /// </summary>
-        public virtual string[] PropertiesToIgnore { get; set; }
+        public virtual string[] PropertiesToIgnore { get; set; } = new string[] { };
 
 
 

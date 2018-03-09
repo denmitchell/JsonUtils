@@ -3,11 +3,11 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp2.0</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>0.2.0</Version>
-    <AssemblyVersion>0.2.0.0</AssemblyVersion>
-    <FileVersion>0.2.0.0</FileVersion>
+    <Version>0.2.1</Version>
+    <AssemblyVersion>0.2.1.0</AssemblyVersion>
+    <FileVersion>0.2.1.0</FileVersion>
     <Description>Includes a JSON.NET JsonConverter and JsonSerializerSettings class that prevents self-referencing loops and, via subclassing, allows specifying of max-depth for serialization and ignoring of specified properties.</Description>
-    <PackageReleaseNotes>Added JsonSimpleValueAttribute for flattening an object to a simple property.  This is useful when you have reference tables with an ID and a Description, and you only want to get serialize the Description as a simple value.</PackageReleaseNotes>
+    <PackageReleaseNotes>Fixed bug with Initialization of PropertiesToIgnore</PackageReleaseNotes>
     <PackageIconUrl>https://avatars0.githubusercontent.com/u/2938333?s=400&amp;v=4</PackageIconUrl>
   </PropertyGroup>
 
