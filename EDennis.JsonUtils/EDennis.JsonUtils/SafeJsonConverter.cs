@@ -147,7 +147,7 @@ namespace EDennis.JsonUtils {
             private JsonWriter jw;
 
             //the current depth of the serialized object graph
-            private int depth = 0;
+            private int depth = 1;
 
             /// <summary>
             /// Constructs a new SafeJsonSerializer with the provided JsonWriter
