@@ -374,8 +374,13 @@ namespace EDennis.JsonUtils {
                         string format = GetStringFormat(info);
                         prop.FormattedValue = null;
                         if (format != null)
-                            prop.FormattedValue = String.Format(format, info.GetValue(obj));
-
+                            try {
+                                prop.FormattedValue = String.Format(format, info.GetValue(obj));
+                            }
+                            catch(FormatException ex) {
+                                string msg = $"The format specified for {obj.GetType().Name}.{prop.Name} ({format}) is invalid.  Please check the syntax.";
+                                throw new FormatException(msg);
+                            }
                         //determine if the property is a collection, and if so, get the
                         //type of elements in the collection
                         prop.IsCollection = (prop.Type.FullName.StartsWith("System.Collections.Generic.List"));
