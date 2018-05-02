@@ -101,13 +101,16 @@ namespace EDennis.JsonUtils {
         /// <param name="reader">The JsonReader to use for reading</param>
         /// <param name="objectType">The type of object to deserialize</param>
         /// <param name="existingValue">An existing value of the object</param>
-        /// <param name="serializer">(ignored</param>
+        /// <param name="serializer">Json Serializer</param>
         /// <returns></returns>
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer) {
-            // Load JObject from stream
-            JObject jObject = JObject.Load(reader);
+            if (reader.TokenType == JsonToken.Null)
+                return null;
 
-            return jObject.ToObject(objectType, serializer);
+            existingValue = existingValue ?? serializer.ContractResolver.ResolveContract(objectType).DefaultCreator();
+            serializer.Populate(reader, existingValue);
+            return existingValue;
+
         }
 
         /// <summary>
@@ -125,7 +128,6 @@ namespace EDennis.JsonUtils {
         public override bool CanConvert(Type objectType) {
             return true;
         }
-
 
         /// <summary>
         /// Serializes an object to JSON, but prevents circular referencing
