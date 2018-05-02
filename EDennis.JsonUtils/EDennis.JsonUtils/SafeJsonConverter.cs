@@ -104,20 +104,14 @@ namespace EDennis.JsonUtils {
         /// <param name="serializer">Json Serializer</param>
         /// <returns></returns>
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer) {
-            if (reader.TokenType == JsonToken.Null)
-                return null;
-
-            existingValue = existingValue ?? serializer.ContractResolver.ResolveContract(objectType).DefaultCreator();
-            serializer.Populate(reader, existingValue);
-            return existingValue;
-
+            throw new NotImplementedException("Unnecessary because CanRead is false. The type will skip the converter.");
         }
 
         /// <summary>
         /// Determines if the converter can read JSON -- always true
         /// </summary>
         public override bool CanRead {
-            get { return true; }
+            get { return false; }
         }
 
         /// <summary>
