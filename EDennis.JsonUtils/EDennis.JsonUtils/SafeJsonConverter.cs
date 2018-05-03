@@ -263,6 +263,15 @@ namespace EDennis.JsonUtils {
                 if (propertyName != null && _propertiesToIgnore.Contains(propertyName))
                     return;
 
+                //handle primitives
+                var type = obj.GetType();
+                if (type.IsPrimitive || type.Name == "String"
+                    || type.Name == "Decimal" || type.Name == "Float" || type.Name == "DateTime") {
+                    jw.WriteValue(obj.ToString());
+                    return;
+                }
+
+
                 var props = new Properties(obj);
 
                 //if class is decorated with value property, serialize to a simple value
@@ -304,7 +313,7 @@ namespace EDennis.JsonUtils {
 
                 foreach (Property prop in props) {
                     //handle a collection
-                    if (prop.IsCollection && prop.Value != null) {
+                    if ((prop.IsCollection || prop.IsArray) && prop.Value != null) {
                         Type t = prop.ElementType;
                         SerializeList(prop.Value as IList, prop.Value.GetHashCode(), prop.Name);
                         //handle a user object
@@ -315,7 +324,7 @@ namespace EDennis.JsonUtils {
                         jw.WritePropertyName(prop.Name);
                         jw.WriteValue(prop.FormattedValue);
                         //handle all other values
-                    } else if (!prop.IsCollection && !prop.IsObject && !_propertiesToIgnore.Contains(prop.Name)) {
+                    } else if (!prop.IsCollection && !prop.IsArray && !prop.IsObject && !_propertiesToIgnore.Contains(prop.Name)) {
                         jw.WritePropertyName(prop.Name);
                         jw.WriteValue(prop.Value);
                     }
@@ -373,7 +382,7 @@ namespace EDennis.JsonUtils {
                             try {
                                 prop.FormattedValue = String.Format(format, info.GetValue(obj));
                             }
-                            catch(FormatException ex) {
+                            catch(FormatException) {
                                 string msg = $"The format specified for {obj.GetType().Name}.{prop.Name} ({format}) is invalid.  Please check the syntax.";
                                 throw new FormatException(msg);
                             }
@@ -381,6 +390,11 @@ namespace EDennis.JsonUtils {
                         //type of elements in the collection
                         prop.IsCollection = (prop.Type.FullName.StartsWith("System.Collections.Generic.List"));
                         if (prop.IsCollection) {
+                            prop.ElementType = TypeSystem.GetElementType(prop.Type);
+                        }
+
+                        prop.IsArray = prop.Type.FullName.EndsWith("[]");
+                        if (prop.IsArray) {
                             prop.ElementType = TypeSystem.GetElementType(prop.Type);
                         }
 
@@ -444,6 +458,7 @@ namespace EDennis.JsonUtils {
                 public Type Type { get; set; }
                 public Type ElementType { get; set; }
                 public bool IsCollection { get; set; }
+                public bool IsArray { get; set; }
                 public bool IsObject { get; set; }
                 public bool IsNullable { get; set; }
                 public object Value { get; set; }
