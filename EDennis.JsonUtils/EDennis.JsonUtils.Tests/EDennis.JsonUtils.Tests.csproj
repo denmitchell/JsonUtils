@@ -13,7 +13,7 @@
 
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 
-    <PackageReleaseNotes>Fixed a bug with PropertiesToIgnore.  Added MaxDepth and PropertiesToIgnore as constructor parameters for SafeJsonSerializerSettings.</PackageReleaseNotes>
+    <PackageReleaseNotes>Added support</PackageReleaseNotes>
 
     <Description>Provides a JSON.NET JsonConverter class and a JsonSerializerSettings class that prevents circular referencing.  Objects can be duplicated at the same depth level of an object graph, but not at different levels.</Description>
   </PropertyGroup>
