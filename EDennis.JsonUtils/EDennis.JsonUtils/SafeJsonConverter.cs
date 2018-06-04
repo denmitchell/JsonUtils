@@ -95,8 +95,6 @@ namespace EDennis.JsonUtils {
             sjs.Serialize(value, MaxDepth, PropertiesToIgnore);
         }
 
-
-
         /// <summary>
         /// Reads an object from JSON
         /// </summary>
@@ -106,20 +104,14 @@ namespace EDennis.JsonUtils {
         /// <param name="serializer">Json Serializer</param>
         /// <returns></returns>
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer) {
-            if (reader.TokenType == JsonToken.Null)
-                return null;
-
-            existingValue = existingValue ?? serializer.ContractResolver.ResolveContract(objectType).DefaultCreator();
-            serializer.Populate(reader, existingValue);
-            return existingValue;
-
+            throw new NotImplementedException("Unnecessary because CanRead is false. The type will skip the converter.");
         }
 
         /// <summary>
         /// Determines if the converter can read JSON -- always true
         /// </summary>
         public override bool CanRead {
-            get { return true; }
+            get { return false; }
         }
 
         /// <summary>
@@ -130,7 +122,6 @@ namespace EDennis.JsonUtils {
         public override bool CanConvert(Type objectType) {
             return true;
         }
-        
 
         /// <summary>
         /// Serializes an object to JSON, but prevents circular referencing
@@ -243,27 +234,11 @@ namespace EDennis.JsonUtils {
 
                 //write the array
                 jw.WriteStartArray();
-                foreach (var obj in list) {
-                    if (IsSimple(obj.GetType())) {
-                        jw.WriteValue(obj);
-                    } else {
-                        SerializeObject(obj, obj.GetHashCode(), null);
-                    }
-                }
+                foreach (var obj in list)
+                    SerializeObject(obj, obj.GetHashCode(), null);
                 jw.WriteEndArray();
 
                 depth--;  //decrement the depth
-            }
-
-            private bool IsSimple(Type type) {
-                if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>)) {
-                    // nullable type, check if the nested type is simple.
-                    return IsSimple((type.GetGenericArguments()[0]).GetTypeInfo());
-                }
-                return type.IsPrimitive
-                    || type.IsEnum
-                    || type.Equals(typeof(string))
-                    || type.Equals(typeof(decimal));
             }
 
 
@@ -287,6 +262,15 @@ namespace EDennis.JsonUtils {
                 //don't serialize if the property should be ignored
                 if (propertyName != null && _propertiesToIgnore.Contains(propertyName))
                     return;
+
+                //handle primitives
+                var type = obj.GetType();
+                if (type.IsPrimitive || type.Name == "String"
+                    || type.Name == "Decimal" || type.Name == "Float" || type.Name == "DateTime") {
+                    jw.WriteValue(obj.ToString());
+                    return;
+                }
+
 
                 var props = new Properties(obj);
 
@@ -329,7 +313,7 @@ namespace EDennis.JsonUtils {
 
                 foreach (Property prop in props) {
                     //handle a collection
-                    if (prop.IsCollection && prop.Value != null) {
+                    if ((prop.IsCollection || prop.IsArray) && prop.Value != null) {
                         Type t = prop.ElementType;
                         SerializeList(prop.Value as IList, prop.Value.GetHashCode(), prop.Name);
                         //handle a user object
@@ -340,7 +324,7 @@ namespace EDennis.JsonUtils {
                         jw.WritePropertyName(prop.Name);
                         jw.WriteValue(prop.FormattedValue);
                         //handle all other values
-                    } else if (!prop.IsCollection && !prop.IsObject && !_propertiesToIgnore.Contains(prop.Name)) {
+                    } else if (!prop.IsCollection && !prop.IsArray && !prop.IsObject && !_propertiesToIgnore.Contains(prop.Name)) {
                         jw.WritePropertyName(prop.Name);
                         jw.WriteValue(prop.Value);
                     }
@@ -395,12 +379,22 @@ namespace EDennis.JsonUtils {
                         string format = GetStringFormat(info);
                         prop.FormattedValue = null;
                         if (format != null)
-                            prop.FormattedValue = String.Format(format, info.GetValue(obj));
-
+                            try {
+                                prop.FormattedValue = String.Format(format, info.GetValue(obj));
+                            }
+                            catch(FormatException) {
+                                string msg = $"The format specified for {obj.GetType().Name}.{prop.Name} ({format}) is invalid.  Please check the syntax.";
+                                throw new FormatException(msg);
+                            }
                         //determine if the property is a collection, and if so, get the
                         //type of elements in the collection
                         prop.IsCollection = (prop.Type.FullName.StartsWith("System.Collections.Generic.List"));
                         if (prop.IsCollection) {
+                            prop.ElementType = TypeSystem.GetElementType(prop.Type);
+                        }
+
+                        prop.IsArray = prop.Type.FullName.EndsWith("[]");
+                        if (prop.IsArray) {
                             prop.ElementType = TypeSystem.GetElementType(prop.Type);
                         }
 
@@ -464,6 +458,7 @@ namespace EDennis.JsonUtils {
                 public Type Type { get; set; }
                 public Type ElementType { get; set; }
                 public bool IsCollection { get; set; }
+                public bool IsArray { get; set; }
                 public bool IsObject { get; set; }
                 public bool IsNullable { get; set; }
                 public object Value { get; set; }
