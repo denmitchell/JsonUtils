@@ -95,19 +95,24 @@ namespace EDennis.JsonUtils {
             sjs.Serialize(value, MaxDepth, PropertiesToIgnore);
         }
 
+
+
         /// <summary>
         /// Reads an object from JSON
         /// </summary>
         /// <param name="reader">The JsonReader to use for reading</param>
         /// <param name="objectType">The type of object to deserialize</param>
         /// <param name="existingValue">An existing value of the object</param>
-        /// <param name="serializer">(ignored</param>
+        /// <param name="serializer">Json Serializer</param>
         /// <returns></returns>
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer) {
-            // Load JObject from stream
-            JObject jObject = JObject.Load(reader);
+            if (reader.TokenType == JsonToken.Null)
+                return null;
 
-            return jObject.ToObject(objectType, serializer);
+            existingValue = existingValue ?? serializer.ContractResolver.ResolveContract(objectType).DefaultCreator();
+            serializer.Populate(reader, existingValue);
+            return existingValue;
+
         }
 
         /// <summary>
@@ -125,7 +130,7 @@ namespace EDennis.JsonUtils {
         public override bool CanConvert(Type objectType) {
             return true;
         }
-
+        
 
         /// <summary>
         /// Serializes an object to JSON, but prevents circular referencing
@@ -238,11 +243,27 @@ namespace EDennis.JsonUtils {
 
                 //write the array
                 jw.WriteStartArray();
-                foreach (var obj in list)
-                    SerializeObject(obj, obj.GetHashCode(), null);
+                foreach (var obj in list) {
+                    if (IsSimple(obj.GetType())) {
+                        jw.WriteValue(obj);
+                    } else {
+                        SerializeObject(obj, obj.GetHashCode(), null);
+                    }
+                }
                 jw.WriteEndArray();
 
                 depth--;  //decrement the depth
+            }
+
+            private bool IsSimple(Type type) {
+                if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>)) {
+                    // nullable type, check if the nested type is simple.
+                    return IsSimple((type.GetGenericArguments()[0]).GetTypeInfo());
+                }
+                return type.IsPrimitive
+                    || type.IsEnum
+                    || type.Equals(typeof(string))
+                    || type.Equals(typeof(decimal));
             }
 
 

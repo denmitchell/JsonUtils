@@ -1,0 +1,38 @@
+﻿{
+  "PassesJsonStructureTest": true,
+  "PassesModelValidationTest": false,
+  "ErrorCount": 1,
+  "Results": [
+    {
+      "SubmitterId": 1,
+      "SubmitterRecordId": 1,
+      "AttemptedOperation": "Add",
+      "Successful": true,
+      "Errors": null
+    },
+    {
+      "SubmitterId": 1,
+      "SubmitterRecordId": 2,
+      "AttemptedOperation": "Add",
+      "Successful": false,
+      "Errors": [
+        {
+          "Data": "Position(Worker),IsManager(True)",
+          "Code": 110105,
+          "Description": "Invalid combination",
+          "Properties": [
+            "Position",
+            "IsManager"
+          ]
+        }
+      ]
+    },
+    {
+      "SubmitterId": 1,
+      "SubmitterRecordId": 3,
+      "AttemptedOperation": "Modify",
+      "Successful": true,
+      "Errors": null
+    }
+  ]
+}
