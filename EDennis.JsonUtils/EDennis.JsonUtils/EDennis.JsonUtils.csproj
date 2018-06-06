@@ -1,13 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>1.0.1</Version>
-    <AssemblyVersion>1.0.1.0</AssemblyVersion>
-    <FileVersion>1.0.1.0</FileVersion>
+    <Version>1.2.0</Version>
+    <AssemblyVersion>1.2.0.0</AssemblyVersion>
+    <FileVersion>1.2.0.0</FileVersion>
     <Description>Includes a JSON.NET JsonConverter and JsonSerializerSettings class that prevents self-referencing loops and, via subclassing, allows specifying of max-depth for serialization and ignoring of specified properties.</Description>
-    <PackageReleaseNotes>Added support for primitive arrays</PackageReleaseNotes>
+    <PackageReleaseNotes>Targets .NET Core 2.1</PackageReleaseNotes>
     <PackageIconUrl>https://avatars0.githubusercontent.com/u/2938333?s=400&amp;v=4</PackageIconUrl>
   </PropertyGroup>
 
