@@ -183,7 +183,7 @@ namespace EDennis.JsonUtils {
                     _propertiesToIgnore.Add(prop);
 
                 //handle a list or object
-                if (obj is ICollection) {
+                if (obj is ICollection || obj is IEnumerable) {
                     SerializeList(obj as IList, obj.GetHashCode(), null);
                 } else {
                     SerializeObject(obj, obj.GetHashCode(), null);
