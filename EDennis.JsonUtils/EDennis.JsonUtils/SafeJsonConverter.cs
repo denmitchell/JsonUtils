@@ -221,7 +221,7 @@ namespace EDennis.JsonUtils {
 
                 //don't serialize if any objects in collection have already been serialized
                 foreach (var obj in list) {
-                    if (_hashDictionary.ContainsKey(obj.GetHashCode()) && _hashDictionary[obj.GetHashCode()] != depth)
+                    if (obj != null && _hashDictionary.ContainsKey(obj.GetHashCode()) && _hashDictionary[obj.GetHashCode()] != depth)
                         return;
                 }
 
