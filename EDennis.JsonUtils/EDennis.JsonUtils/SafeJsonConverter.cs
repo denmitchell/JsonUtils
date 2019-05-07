@@ -230,13 +230,13 @@ namespace EDennis.JsonUtils {
 
                 //write the propertyName, if it exists
                 if (propertyName != null)
-                    jw.WritePropertyName(propertyName);
+                    WritePropertyName(jw, propertyName);
 
                 //write the array
                 jw.WriteStartArray();
                 foreach (var obj in list) {
                     if (IsSimple(obj.GetType())) {
-                        jw.WriteValue(obj);
+                        WriteValue(jw, propertyName, obj);
                     } else {
                         SerializeObject(obj, obj.GetHashCode(), null);
                     }
@@ -284,7 +284,7 @@ namespace EDennis.JsonUtils {
                 var type = obj.GetType();
                 if (type.IsPrimitive || type.Name == "String"
                     || type.Name == "Decimal" || type.Name == "Float" || type.Name == "DateTime") {
-                    jw.WriteValue(obj.ToString());
+                    WriteValue(jw, propertyName, obj.ToString());
                     return;
                 }
 
@@ -295,12 +295,12 @@ namespace EDennis.JsonUtils {
                 var valueProperty = props.GetValueProperty();
 
                 if (valueProperty != null) {
-                    jw.WritePropertyName(propertyName);
+                    WritePropertyName(jw, propertyName);
                     var prop = props.Where(p => p.Name == valueProperty).FirstOrDefault();
                     if (prop == null)
                         throw new ArgumentOutOfRangeException(
                             $"JsonSimpleValue Attribute specified on {obj.GetType().Name} attempts to target an undefined property: {propertyName}.");
-                    jw.WriteValue(prop.Value);
+                    WriteValue(jw, prop.Name, prop.Value);
                     return;
                 }
 
@@ -322,7 +322,7 @@ namespace EDennis.JsonUtils {
 
                 //write the propertyName, if it exists
                 if (propertyName != null)
-                    jw.WritePropertyName(propertyName);
+                    WritePropertyName(jw, propertyName);
 
                 //write the object
                 jw.WriteStartObject();
@@ -338,12 +338,12 @@ namespace EDennis.JsonUtils {
                         SerializeObject(prop.Value, prop.Value.GetHashCode(), prop.Name);
                         //handle a formatted string value
                     } else if (prop.FormattedValue != null && !_propertiesToIgnore.Contains(prop.Name)) {
-                        jw.WritePropertyName(prop.Name);
-                        jw.WriteValue(prop.FormattedValue);
+                        WritePropertyName(jw, prop.Name);
+                        WriteValue(jw, prop.Name, prop.FormattedValue);
                         //handle all other values
                     } else if (!prop.IsCollection && !prop.IsArray && !prop.IsObject && !_propertiesToIgnore.Contains(prop.Name)) {
-                        jw.WritePropertyName(prop.Name);
-                        jw.WriteValue(prop.Value);
+                        WritePropertyName(jw, prop.Name);
+                        WriteValue(jw, prop.Name, prop.Value);
                     }
                 }
                 jw.WriteEndObject();
@@ -351,7 +351,21 @@ namespace EDennis.JsonUtils {
 
             }
 
+            private void WritePropertyName(JsonWriter jw, string propName) {
+                try {
+                    jw.WritePropertyName(propName);
+                } catch (JsonWriterException ex) {
+                    throw new ApplicationException($"Cannot write property name {propName} to json for {JToken.FromObject(ex.Data).ToString()} at {ex.Path}.");
+                }
+            }
 
+            private void WriteValue<T>(JsonWriter jw, string propName, T value) {
+                try {
+                    jw.WriteValue(value);
+                } catch (JsonWriterException ex) {
+                    throw new ApplicationException($"Cannot write value {JToken.FromObject(value).ToString()} for property name {propName} to json for {JToken.FromObject(ex.Data).ToString()} at {ex.Path}.");
+                }
+            }
             /// <summary>
             /// The class populates a list of Property objects
             /// associated with a provide object
