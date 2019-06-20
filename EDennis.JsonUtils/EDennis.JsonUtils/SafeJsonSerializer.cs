@@ -70,7 +70,16 @@ namespace EDennis.JsonUtils {
 
             //handle Dictionary
             if (obj is IDictionary) {
-                jw.WriteRawValue(JToken.FromObject(obj).ToString());
+                var clone = JToken.FromObject(obj).ToObject(obj.GetType());
+                var dict = (clone as IDictionary); 
+                foreach(var prop in _propertiesToIgnore) {
+                    foreach (var key in dict.Keys)
+                        if (key.ToString() == prop) {
+                            dict.Remove(key);
+                            break;
+                        }
+                }
+                jw.WriteRawValue(JToken.FromObject(clone).ToString());
             //handle IEnumerable and IOrderedEnumerable
             } else if (obj is IEnumerable) {
                 try {
