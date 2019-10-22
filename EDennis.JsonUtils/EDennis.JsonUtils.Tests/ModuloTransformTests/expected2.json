@@ -1,0 +1,29 @@
+﻿[
+  {
+    "Id": 10,
+    "FirstName": "Bob",
+    "LastName": "Barker",
+    "ContactInfo": [
+      {
+        "ContactId": 10,
+        "Email": "bob@priceisright.com"
+      }
+    ]
+  },
+  {
+    "Id": 11,
+    "FirstName": "Monty",
+    "LastName": "Hall",
+    "ContactInfo": [
+      {
+        "ContactId": 12,
+        "Email": "monty@letsmakeadeal.com"
+      },
+      {
+        "ContactId": 13,
+        "Email": "monty@whatsbehindcurtain1.org"
+      }
+    ]
+  }
+]
+  
