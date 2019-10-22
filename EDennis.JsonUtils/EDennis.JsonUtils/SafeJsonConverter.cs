@@ -40,6 +40,21 @@ namespace EDennis.JsonUtils {
             PropertiesToIgnore = propertiesToIgnore;
         }
 
+
+        /// <summary>
+        /// Constructs a new SafeJsonConverter with the provided
+        /// maximum depth and properties to ignore
+        /// </summary>
+        /// <param name="maxDepth">Maximum depth of the object graph</param>
+        /// <param name="propertiesToIgnore">Names of properties to ignore in object graph (this is a global ignore)</param>
+        /// <param name="moduloTransform">Names of properties to which to apply a modulo operation (value is modulus)</param>
+        public SafeJsonConverter(int maxDepth, string[] propertiesToIgnore, Dictionary<string,ulong> moduloTransform) {
+            MaxDepth = maxDepth;
+            PropertiesToIgnore = propertiesToIgnore;
+            ModuloTransform = moduloTransform;
+        }
+
+
         /// <summary>
         /// Constructs a new SafeJsonConverter with the provided
         /// maximum depth
@@ -58,8 +73,37 @@ namespace EDennis.JsonUtils {
         /// <param name="propertiesToIgnore">Names of properties to ignore in object graph (this is a global ignore)</param>
         public SafeJsonConverter(string[] propertiesToIgnore) {
             PropertiesToIgnore = propertiesToIgnore;
+            ModuloTransform = new Dictionary<string, ulong>();
             MaxDepth = DEFAULT_MAXDEPTH;
         }
+
+
+        /// <summary>
+        /// Constructs a new SafeJsonConverter with the provided
+        /// array of properties to ignore.  The maximum depth is
+        /// set to 99.
+        /// </summary>
+        /// <param name="moduloTransform">Names of properties to which to apply a modulo operation (value is modulus)</param>
+        public SafeJsonConverter(Dictionary<string, ulong> moduloTransform) {
+            PropertiesToIgnore = new string[] { };
+            ModuloTransform = moduloTransform;
+            MaxDepth = DEFAULT_MAXDEPTH;
+        }
+
+
+        /// <summary>
+        /// Constructs a new SafeJsonConverter with the provided
+        /// array of properties to ignore.  The maximum depth is
+        /// set to 99.
+        /// </summary>
+        /// <param name="propertiesToIgnore">Names of properties to ignore in object graph (this is a global ignore)</param>
+        /// <param name="moduloTransform">Names of properties to which to apply a modulo operation (value is modulus)</param>
+        public SafeJsonConverter(string[] propertiesToIgnore, Dictionary<string, ulong> moduloTransform) {
+            PropertiesToIgnore = propertiesToIgnore;
+            ModuloTransform = moduloTransform;
+            MaxDepth = DEFAULT_MAXDEPTH;
+        }
+
 
         /// <summary>
         /// Constructs a new SafeJsonConverter with
@@ -69,6 +113,7 @@ namespace EDennis.JsonUtils {
         public SafeJsonConverter() {
             MaxDepth = 99;
             PropertiesToIgnore = new string[] { };
+            ModuloTransform = new Dictionary<string, ulong>();
         }
 
         /// <summary>
@@ -82,7 +127,19 @@ namespace EDennis.JsonUtils {
         public virtual string[] PropertiesToIgnore { get; set; }
 
 
-
+        /// <summary>
+        /// Properties on which a modulo operation should be performed
+        /// (dictionary key is the property name).
+        /// as well as the modulus itself (dictionary value is
+        /// the modulus).
+        /// 
+        /// This transform is useful for complex Ids that are generated 
+        /// by adding a test-specific subsequence value to a high-start/
+        /// high-increment sequence value.  The transform can produce
+        /// Ids that don't change between tests, even in a shared 
+        /// database environment.
+        /// </summary>
+        public virtual Dictionary<string,ulong> ModuloTransform { get; set; }
 
         /// <summary>
         /// Writes an object to JSON
@@ -92,7 +149,7 @@ namespace EDennis.JsonUtils {
         /// <param name="serializer">(This is ignored.)</param>
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) {
             var sjs = new SafeJsonSerializer(writer);
-            sjs.Serialize(value, MaxDepth, PropertiesToIgnore);
+            sjs.Serialize(value, MaxDepth, PropertiesToIgnore, ModuloTransform);
         }
 
         /// <summary>
@@ -135,6 +192,10 @@ namespace EDennis.JsonUtils {
             //an optional set of property names to ignore during serialization
             private HashSet<string> _propertiesToIgnore = new HashSet<string>();
 
+            //an optional mapping of property names to modulus values.  When
+            //mapped, the modulo operation will be performed.
+            private Dictionary<string, ulong> _moduloTransform { get; set; }
+
             //the maximum depth of the object graph to serialize
             private int _maxDepth = 3; //default
 
@@ -173,14 +234,20 @@ namespace EDennis.JsonUtils {
             /// <param name="maxDepth">The maximum depth of the object graph to serialize</param>
             /// <param name="propertiesToIgnore">An array of property names to ignore</param>
             /// <returns></returns>
-            public string Serialize(object obj, int maxDepth, string[] propertiesToIgnore) {
+            public string Serialize(object obj, int maxDepth, string[] propertiesToIgnore,
+                Dictionary<string,ulong> moduloTransform) {
 
                 //save the maximum depth
                 _maxDepth = maxDepth;
 
+                
                 //convert the string array of property names to ignore into a hash set
                 foreach (string prop in propertiesToIgnore)
                     _propertiesToIgnore.Add(prop);
+
+                //save the modulo operation map
+                _moduloTransform = moduloTransform;
+
 
                 //handle a list or object
                 if (obj is ICollection || obj is IEnumerable) {
@@ -284,7 +351,13 @@ namespace EDennis.JsonUtils {
                 var type = obj.GetType();
                 if (type.IsPrimitive || type.Name == "String"
                     || type.Name == "Decimal" || type.Name == "Float" || type.Name == "DateTime") {
-                    WriteValue(jw, propertyName, obj.ToString());
+
+                    //handle modulo transformations
+                    if (_moduloTransform.ContainsKey(propertyName) && 
+                        ( type.Name == typeof(int).Name || type.Name == typeof(long).Name || type.Name == typeof(uint).Name) || type.Name == typeof(ulong).Name)
+                        WriteValue(jw, propertyName, (Convert.ToUInt64(obj) % _moduloTransform[propertyName]).ToString());
+                    else
+                        WriteValue(jw, propertyName, obj.ToString());
                     return;
                 }
 

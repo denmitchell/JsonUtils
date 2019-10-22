@@ -34,6 +34,22 @@ namespace EDennis.JsonUtils {
             ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
         }
 
+
+        /// <summary>
+        /// Constructs a new SafeJsonSerializerSettings instance
+        /// with the provided maximum depth, the provided
+        /// property filters, modulo transform, and ReferenceLoopHandling.Ignore.
+        /// </summary>
+        /// <param name="maxDepth">Maximum depth of the object graph to serialize</param>
+        /// <param name="propertiesToIgnore">array of properties to ignore during serialization</param>
+        /// <param name="moduloTransform">map or properties and modulus values for modulo tranform</param>
+        public SafeJsonSerializerSettings(int maxDepth, string[] propertiesToIgnore, 
+            Dictionary<string,ulong> moduloTransform) {
+            Converters = new[] { new SafeJsonConverter(maxDepth, propertiesToIgnore,moduloTransform) };
+            ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+        }
+
+
         /// <summary>
         /// Constructs a new SafeJsonSerializerSettings instance
         /// with the provided maximum depth, no
@@ -55,5 +71,32 @@ namespace EDennis.JsonUtils {
             Converters = new[] { new SafeJsonConverter(propertiesToIgnore) };
             ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
         }
+
+        /// <summary>
+        /// Constructs a new SafeJsonSerializerSettings instance
+        /// with default maximum depth (99), the provided
+        /// property filters, modulo transform and ReferenceLoopHandling.Ignore.
+        /// </summary>
+        /// <param name="propertiesToIgnore">array of properties to ignore during serialization</param>
+        /// <param name="moduloTransform">map or properties and modulus values for modulo tranform</param>
+        public SafeJsonSerializerSettings(string[] propertiesToIgnore, 
+            Dictionary<string,ulong> moduloTransform) {
+            Converters = new[] { new SafeJsonConverter(propertiesToIgnore, moduloTransform) };
+            ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+        }
+
+
+        /// <summary>
+        /// Constructs a new SafeJsonSerializerSettings instance
+        /// with default maximum depth (99), the provided
+        /// modulo transform and ReferenceLoopHandling.Ignore.
+        /// </summary>
+        /// <param name="moduloTransform">map or properties and modulus values for modulo tranform</param>
+        public SafeJsonSerializerSettings(Dictionary<string, ulong> moduloTransform) {
+            Converters = new[] { new SafeJsonConverter(moduloTransform) };
+            ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+        }
+
+
     }
 }
