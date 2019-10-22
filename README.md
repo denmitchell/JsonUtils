@@ -1,2 +1,2 @@
 # JsonUtils
-Contains a JSON.NET JsonConverter that prevents self-referencing loops and, via subclassing, allows specifying of max-depth for serialization and ignoring of specified properties.
+Contains a JSON.NET JsonConverter that prevents self-referencing loops and allows specifying of (a) max-depth for serialization, (b) ignoring of specified properties, and (c) modulo operations on specified integral properties.  The modulo operations can be used to create "Equivalence Class Ids" -- Ids that can be seen as constant across deletions and re-inserts, despite having an auto-increment, sequence-driven real value in a shared database environment.
