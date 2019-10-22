@@ -21,6 +21,10 @@ namespace EDennis.JsonUtils {
         //an optional set of property names to ignore during serialization
         private HashSet<string> _propertiesToIgnore = new HashSet<string>();
 
+        //an optional mapping of property names to modulus values.  When
+        //mapped, the modulo operation will be performed.
+        private Dictionary<string, ulong> _moduloTransform { get; set; }
+
         //the maximum depth of the object graph to serialize
         private int _maxDepth = 3; //default
 
@@ -59,14 +63,21 @@ namespace EDennis.JsonUtils {
         /// <param name="maxDepth">The maximum depth of the object graph to serialize</param>
         /// <param name="propertiesToIgnore">An array of property names to ignore</param>
         /// <returns></returns>
-        public string Serialize(object obj, int maxDepth, string[] propertiesToIgnore) {
+        public string Serialize(object obj, int maxDepth, string[] propertiesToIgnore,
+                Dictionary<string, ulong> moduloTransform) {
 
             //save the maximum depth
             _maxDepth = maxDepth;
 
+
+
             //convert the string array of property names to ignore into a hash set
             foreach (string prop in propertiesToIgnore)
                 _propertiesToIgnore.Add(prop);
+
+
+            //save the modulo operation map
+            _moduloTransform = moduloTransform;
 
             //handle Dictionary
             if (obj is IDictionary) {
@@ -200,7 +211,12 @@ namespace EDennis.JsonUtils {
             if (type.IsPrimitive || type.Name == "String"
                 || type.Name == "Decimal" || type.Name == "Float" || type.Name == "DateTime") {
                 try {
-                    jw.WriteValue(obj.ToString());
+                    //handle modulo transformations
+                    if (_moduloTransform.ContainsKey(propertyName) &&
+                        (type.Name == typeof(int).Name || type.Name == typeof(long).Name || type.Name == typeof(uint).Name) || type.Name == typeof(ulong).Name)
+                        jw.WriteValue((Convert.ToUInt64(obj) % _moduloTransform[propertyName]).ToString());
+                    else
+                        jw.WriteValue(obj.ToString());
                 } catch (Exception ex) {
                     throw new ApplicationException($"Exception trying to serialize to JSON the value {obj.ToString()} for {propertyName}: {ex.Message}");
                 }
