@@ -81,16 +81,7 @@ namespace EDennis.JsonUtils {
 
             //handle Dictionary
             if (obj is IDictionary) {
-                var clone = JToken.FromObject(obj).ToObject(obj.GetType());
-                var dict = (clone as IDictionary); 
-                foreach(var prop in _propertiesToIgnore) {
-                    foreach (var key in dict.Keys)
-                        if (key.ToString() == prop) {
-                            dict.Remove(key);
-                            break;
-                        }
-                }
-                jw.WriteRawValue(JToken.FromObject(clone).ToString());
+                SerializeDictionary(obj, obj.GetHashCode(), null);
             //handle IEnumerable and IOrderedEnumerable
             } else if (obj is IEnumerable) {
                 try {
@@ -99,16 +90,59 @@ namespace EDennis.JsonUtils {
                 } catch {
                     jw.WriteRawValue(JToken.FromObject(obj).ToString());
                 }
-            //handle other ICollection
-            } else if (obj is ICollection) {                
+                //handle other ICollection
+            } else if (obj is ICollection) {
                 SerializeList(obj as IList, obj.GetHashCode(), null);
-            //handle object
+                //handle object
             } else {
                 SerializeObject(obj, obj.GetHashCode(), null);
             }
 
             //return the JSON string
             return sb.ToString();
+        }
+
+        private void SerializeDictionary(object obj, int hashCode, string propertyName) {
+
+            if (obj == null)
+                return;
+
+            var clone = JToken.FromObject(obj).ToObject(obj.GetType());
+            var dict = (clone as IDictionary);
+
+
+            if (dict.Count == 0)
+                return;
+
+            //don't serialize if the maximum depth is surpassed
+            if (depth > _maxDepth)
+                return;
+
+            //don't serialize if the property should be ignored
+            if (propertyName != null && _propertiesToIgnore.Contains(propertyName))
+                return;
+
+            //don't serialize if the list has already been serialized at a different level
+            if (_hashDictionary.ContainsKey(hashCode) && _hashDictionary[hashCode] != depth)
+                return;
+
+            try {
+                //write the propertyName, if it exists
+                if (propertyName != null)
+                    jw.WritePropertyName(propertyName);
+            } catch (Exception ex) {
+                throw new ApplicationException($"Exception trying to write property name {propertyName} to JSON: {ex.Message}");
+            }
+
+            foreach (var prop in _propertiesToIgnore) {
+                foreach (var key in dict.Keys)
+                    if (key.ToString() == prop) {
+                        dict.Remove(key);
+                        break;
+                    }
+            }
+            jw.WriteRawValue(JToken.FromObject(clone).ToString());
+
         }
 
 
@@ -277,7 +311,9 @@ namespace EDennis.JsonUtils {
 
             foreach (Property prop in props) {
                 //handle a collection
-                if ((prop.IsCollection || prop.IsArray) && prop.Value != null) {
+                if (prop.IsDictionary) {
+                    SerializeDictionary(prop.Value, prop.Value.GetHashCode(), prop.Name);
+                } else if ((prop.IsCollection || prop.IsArray) && prop.Value != null) {
                     Type t = prop.ElementType;
                     SerializeList(prop.Value as IList, prop.Value.GetHashCode(), prop.Name);
                     //handle a user object
@@ -373,6 +409,15 @@ namespace EDennis.JsonUtils {
                         prop.ElementType = TypeSystem.GetElementType(prop.Type);
                     }
 
+                    //determine if the property is a Dictionary, and if so, get the
+                    //type of elements in the collection
+                    prop.IsDictionary = (typeof(IDictionary).IsAssignableFrom(prop.Type));
+                    //not needed
+                    //if (prop.IsDictionary) {
+                    //    prop.ElementType = TypeSystem.GetElementType(prop.Type);
+                    //}
+
+
                     prop.IsArray = prop.Type.FullName.EndsWith("[]");
                     if (prop.IsArray) {
                         prop.ElementType = TypeSystem.GetElementType(prop.Type);
@@ -446,6 +491,7 @@ namespace EDennis.JsonUtils {
             public Type Type { get; set; }
             public Type ElementType { get; set; }
             public bool IsCollection { get; set; }
+            public bool IsDictionary { get; set; }
             public bool IsArray { get; set; }
             public bool IsObject { get; set; }
             public bool IsNullable { get; set; }
