@@ -5,6 +5,7 @@ using Xunit;
 using Xunit.Abstractions;
 using System;
 using NutsAndBolts.Tests;
+using System.Linq;
 
 namespace EDennis.JsonUtils.Tests {
     public class StaticSerializeTests {
@@ -239,6 +240,59 @@ namespace EDennis.JsonUtils.Tests {
         }
 
 
+        internal class ComplexObject {
+            public Dictionary<string, Person> PersonDict { get; set; }
+            public IEnumerable<Person> Persons { get; set; }
+            public List<Dictionary<string, Person>> PersonDicts { get; set; }
+
+        }
+
+
+        [Fact]
+        public void TestComplexObject() {
+            var personA = JsonSerializer.Deserialize<Person>(JsonSerializer.Serialize(persons[0]));
+            var personB = JsonSerializer.Deserialize<Person>(JsonSerializer.Serialize(persons[0]));
+            var personC = JsonSerializer.Deserialize<Person>(JsonSerializer.Serialize(persons[1]));
+            var personD = JsonSerializer.Deserialize<Person>(JsonSerializer.Serialize(persons[1]));
+            var co = new ComplexObject() {
+                PersonDict = new Dictionary<string, Person> {
+                    { "Moe", personA },
+                    { "Larry", personC }
+                },
+                Persons = new Person[] { persons[0], persons[1] },
+                PersonDicts = new List<Dictionary<string, Person>>() {
+                    new Dictionary<string, Person> {
+                        { "Moe", personB },
+                        { "Larry", personD }
+                    }
+                }
+            };
+
+            var actual = SafeJsonSerializer.Serialize(co);
+            var expected = JsonSerializer.Serialize(co,
+                new JsonSerializerOptions { WriteIndented = true, IgnoreNullValues = true });
+
+            if (actual != expected) {
+                var fsc = FileStringComparer.GetSideBySideFileStrings(expected, actual, "EXPECTED", "ACTUAL");
+                _output.WriteLine(fsc);
+            }
+
+
+            Assert.Equal(expected, actual);
+
+        }
+
+        [Fact]
+        public void TestIOrderedEnumerable() {
+            var ps = new Dictionary<string, Person>() {
+                { "Moe", persons[0] },
+                { "Larry", persons[1] },
+            };
+            var orderedPersons = ps.OrderBy(x => x.Key);
+            var actual = SafeJsonSerializer.Serialize(orderedPersons);
+            var expected = JsonSerializer.Serialize(orderedPersons);
+
+        }
 
     }
 }

@@ -1,33 +1,33 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.Text;
-using System.Text.Json;
 using System.IO;
 using System.Linq;
-using System.Collections;
-using System.Diagnostics;
+using System.Text;
+using System.Text.Json;
 
 namespace EDennis.JsonUtils {
+
     public partial class SafeJsonSerializer {
 
         public static string Serialize(object obj, int maxDepth = 99, bool indented = true, string[] propertiesToIgnore = null) {
             var jsonWriterOptions = new JsonWriterOptions { Indented = indented };
             using var stream = new MemoryStream();
             using var jw = new Utf8JsonWriter(stream, jsonWriterOptions);
-            Serialize(obj, null, jw, maxDepth, propertiesToIgnore ?? new string[] { }, new List<int> { });
+            Serialize(obj, null, jw, maxDepth, propertiesToIgnore ?? new string[] { }, new List<int> { }, stream);
             jw.Flush();
             string json = Encoding.UTF8.GetString(stream.ToArray());
             return json;
         }
 
-        private static void Serialize(object obj, string propertyName, Utf8JsonWriter jw, int maxDepth, string[] propertiesToIgnore, List<int> hashCodes) {
+        protected static void Serialize(object obj, string propertyName, Utf8JsonWriter jw, int maxDepth, string[] propertiesToIgnore, List<int> hashCodes, MemoryStream stream) {
             if (jw.CurrentDepth > maxDepth)
                 return;
             if (propertiesToIgnore.Contains(propertyName))
                 return;
 
             var jsonValueType = GetJsonValueKind(obj);
-            if(jsonValueType == JsonValueKind.Array || jsonValueType == JsonValueKind.Object) {
+            if (jsonValueType == JsonValueKind.Array || jsonValueType == JsonValueKind.Object) {
                 var hashCode = obj.GetHashCode();
                 if (hashCodes.Contains(hashCode))
                     return;
@@ -56,16 +56,21 @@ namespace EDennis.JsonUtils {
                     jw.WriteBooleanValue(false);
                     break;
                 case JsonValueKind.String:
-                    jw.WriteStringValue(JsonSerializer.Serialize(obj).Replace("\u0022",""));
+                    jw.WriteStringValue(JsonSerializer.Serialize(obj).Replace("\u0022", ""));
                     break;
                 case JsonValueKind.Number:
                     jw.WriteNumberValue(Convert.ToDecimal(obj));
                     break;
                 case JsonValueKind.Array:
                     jw.WriteStartArray();
-                    var oList = (obj as IEnumerable<object>).ToList();
-                    foreach (var item in oList)
-                        Serialize(item, null, jw, maxDepth, propertiesToIgnore, hashCodes);
+                    try {
+                        var oList = (obj as IEnumerable<object>).ToList();
+                        foreach (var item in oList)
+                            Serialize(item, null, jw, maxDepth, propertiesToIgnore, hashCodes, stream);
+                    } catch {
+                        using var jw2 = new StreamWriter(stream,null,-1,true);
+                        jw2.Write(JsonSerializer.Serialize(obj, new JsonSerializerOptions { MaxDepth = maxDepth }));
+                    }
                     jw.WriteEndArray();
                     break;
                 case JsonValueKind.Object:
@@ -74,10 +79,10 @@ namespace EDennis.JsonUtils {
                     if (type.IsIDictionary()) {
                         var dict = obj as IDictionary;
                         foreach (var key in dict.Keys)
-                            Serialize(dict[key], key.ToString(), jw, maxDepth, propertiesToIgnore, hashCodes);
+                            Serialize(dict[key], key.ToString(), jw, maxDepth, propertiesToIgnore, hashCodes, stream);
                     } else {
                         foreach (var prop in type.GetProperties())
-                            Serialize(prop.GetValue(obj), prop.Name, jw, maxDepth, propertiesToIgnore, hashCodes);
+                            Serialize(prop.GetValue(obj), prop.Name, jw, maxDepth, propertiesToIgnore, hashCodes, stream);
                     }
                     jw.WriteEndObject();
                     break;
@@ -85,6 +90,9 @@ namespace EDennis.JsonUtils {
                     return;
             }
         }
+
+
+
         public static JsonValueKind GetJsonValueKind(object obj) {
             var type = obj.GetType();
             if (obj == null)
@@ -117,15 +125,16 @@ namespace EDennis.JsonUtils {
         }
     }
 
-    public static class TypeExtensions {
-        public static bool IsIEnumerable(this Type type) {
+    internal static class TypeExtensions {
+        internal static bool IsIEnumerable(this Type type) {
             return type.IsGenericType && type.GetInterfaces().Contains(typeof(IEnumerable));
         }
-        public static bool IsIDictionary(this Type type) {
+        internal static bool IsIDictionary(this Type type) {
             return type.IsGenericType &&
-                   type.GetGenericTypeDefinition().IsAssignableFrom(typeof(IDictionary<,>));
+                (type.GetInterfaces().Contains(typeof(IDictionary))
+                || typeof(Dictionary<,>).IsAssignableFrom(type.GetGenericTypeDefinition()));
         }
-        public static bool IsNumber(this Type type) {
+        internal static bool IsNumber(this Type type) {
             return type == typeof(byte)
                 || type == typeof(ushort)
                 || type == typeof(short)
@@ -138,5 +147,6 @@ namespace EDennis.JsonUtils {
                 || type == typeof(float)
                 ;
         }
+
     }
 }

@@ -1,0 +1,130 @@
+﻿{
+  "PersonDict": {
+    "Moe": {
+      "Id": 1,
+      "Name": "Moe",
+      "SysStart": "2000-01-01T00:00:00",
+      "SysEnd": "2000-02-01T00:00:00",
+      "Addresses": [
+        {
+          "Id": 1,
+          "City": "Hartford",
+          "SysStart": "2000-01-01T00:00:00",
+          "SysEnd": "2000-02-01T00:00:00"
+        },
+        {
+          "Id": 2,
+          "City": "Bridgeport",
+          "SysStart": "2000-01-01T00:00:00",
+          "SysEnd": "2000-02-01T00:00:00"
+        }
+      ]
+    },
+    "Larry": {
+      "Id": 2,
+      "Name": "Larry",
+      "SysStart": "2001-01-01T00:00:00",
+      "SysEnd": "2001-02-01T00:00:00",
+      "Addresses": [
+        {
+          "Id": 3,
+          "City": "Boston",
+          "SysStart": "2001-01-01T00:00:00",
+          "SysEnd": "2001-02-01T00:00:00"
+        },
+        {
+          "Id": 4,
+          "City": "Springfield",
+          "SysStart": "2001-01-01T00:00:00",
+          "SysEnd": "2001-02-01T00:00:00"
+        }
+      ]
+    }
+  },
+  "Persons": [
+    {
+      "Id": 1,
+      "Name": "Moe",
+      "SysStart": "2000-01-01T00:00:00",
+      "SysEnd": "2000-02-01T00:00:00",
+      "Addresses": [
+        {
+          "Id": 1,
+          "City": "Hartford",
+          "SysStart": "2000-01-01T00:00:00",
+          "SysEnd": "2000-02-01T00:00:00"
+        },
+        {
+          "Id": 2,
+          "City": "Bridgeport",
+          "SysStart": "2000-01-01T00:00:00",
+          "SysEnd": "2000-02-01T00:00:00"
+        }
+      ]
+    },
+    {
+      "Id": 2,
+      "Name": "Larry",
+      "SysStart": "2001-01-01T00:00:00",
+      "SysEnd": "2001-02-01T00:00:00",
+      "Addresses": [
+        {
+          "Id": 3,
+          "City": "Boston",
+          "SysStart": "2001-01-01T00:00:00",
+          "SysEnd": "2001-02-01T00:00:00"
+        },
+        {
+          "Id": 4,
+          "City": "Springfield",
+          "SysStart": "2001-01-01T00:00:00",
+          "SysEnd": "2001-02-01T00:00:00"
+        }
+      ]
+    }
+  ],
+  "PersonDicts": [
+    {
+      "Moe": {
+        "Id": 1,
+        "Name": "Moe",
+        "SysStart": "2000-01-01T00:00:00",
+        "SysEnd": "2000-02-01T00:00:00",
+        "Addresses": [
+          {
+            "Id": 1,
+            "City": "Hartford",
+            "SysStart": "2000-01-01T00:00:00",
+            "SysEnd": "2000-02-01T00:00:00"
+          },
+          {
+            "Id": 2,
+            "City": "Bridgeport",
+            "SysStart": "2000-01-01T00:00:00",
+            "SysEnd": "2000-02-01T00:00:00"
+          }
+        ]
+      },
+      "Larry": {
+        "Id": 2,
+        "Name": "Larry",
+        "SysStart": "2001-01-01T00:00:00",
+        "SysEnd": "2001-02-01T00:00:00",
+        "Addresses": [
+          {
+            "Id": 3,
+            "City": "Boston",
+            "SysStart": "2001-01-01T00:00:00",
+            "SysEnd": "2001-02-01T00:00:00"
+          },
+          {
+            "Id": 4,
+            "City": "Springfield",
+            "SysStart": "2001-01-01T00:00:00",
+            "SysEnd": "2001-02-01T00:00:00"
+          }
+        ]
+      }
+    }
+  ]
+}
