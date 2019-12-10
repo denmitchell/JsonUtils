@@ -12,7 +12,7 @@ using System.Linq;
 namespace EDennis.JsonUtils {
 
 
-    public class SafeJsonSerializer {
+    public partial class SafeJsonSerializer {
 
         // dictionary whose key is an object hashcode and whose value is
         // the depth of the object graph where the hashcode is registered.

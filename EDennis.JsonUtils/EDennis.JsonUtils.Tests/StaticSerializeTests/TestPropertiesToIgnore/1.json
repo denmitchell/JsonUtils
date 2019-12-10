@@ -1,0 +1,30 @@
+﻿[
+  {
+    "Id": 1,
+    "Name": "Moe",
+    "Addresses": [
+      {
+        "Id": 1,
+        "City": "Hartford"
+      },
+      {
+        "Id": 2,
+        "City": "Bridgeport"
+      }
+    ]
+  },
+  {
+    "Id": 2,
+    "Name": "Larry",
+    "Addresses": [
+      {
+        "Id": 3,
+        "City": "Boston"
+      },
+      {
+        "Id": 4,
+        "City": "Springfield"
+      }
+    ]
+  }
+]
