@@ -11,18 +11,18 @@ namespace EDennis.JsonUtils {
 
     public partial class SafeJsonSerializer {
 
-        public static string Serialize<T>(T obj, int maxDepth = 99, bool indented = true, string[] propertiesToIgnore = null) {
+        public static string Serialize<T>(T obj, int maxDepth = 99, bool indented = true, string[] propertiesToIgnore = null, bool textOrderArrayElements = false) {
             var jsonWriterOptions = new JsonWriterOptions { Indented = indented };
             using var stream = new MemoryStream();
             using var jw = new Utf8JsonWriter(stream, jsonWriterOptions);
-            Serialize(obj, null, jw, maxDepth, propertiesToIgnore ?? new string[] { }, new List<int> { }, stream);
+            Serialize(obj, null, jw, maxDepth, propertiesToIgnore ?? new string[] { }, new List<int> { }, textOrderArrayElements);
             jw.Flush();
             string json = Encoding.UTF8.GetString(stream.ToArray());
             return json;
         }
 
 
-        protected static void Serialize<T>(T obj, string propertyName, Utf8JsonWriter jw, int maxDepth, string[] propertiesToIgnore, List<int> hashCodes, MemoryStream stream) {
+        protected static void Serialize<T>(T obj, string propertyName, Utf8JsonWriter jw, int maxDepth, string[] propertiesToIgnore, List<int> hashCodes, bool textOrderArrayElements) {
             if (jw.CurrentDepth > maxDepth)
                 return;
             if (propertiesToIgnore.Contains(propertyName))
@@ -65,10 +65,9 @@ namespace EDennis.JsonUtils {
                     break;
                 case JsonValueKind.Array:
                     jw.WriteStartArray();
-                    try {
+                    try {                        
                         var oList = (obj as IEnumerable<object>).ToList();
-                        foreach (var item in oList)
-                            Serialize(item, null, jw, maxDepth, propertiesToIgnore, hashCodes, stream);
+                        SerializeEnumerable(oList, propertyName, jw, maxDepth, propertiesToIgnore, hashCodes, textOrderArrayElements);
                     } catch {
                         
                         //upon failure, use reflection and generic SerializeEnumerable method
@@ -77,7 +76,7 @@ namespace EDennis.JsonUtils {
 
                         MethodInfo method = typeof(SafeJsonSerializer).GetMethod("SerializeEnumerable",BindingFlags.Static|BindingFlags.NonPublic);
                         MethodInfo genericM = method.MakeGenericMethod(itemType);
-                        genericM.Invoke(null, new object[] { obj, propertyName, jw, maxDepth, propertiesToIgnore, hashCodes, stream });
+                        genericM.Invoke(null, new object[] { obj, propertyName, jw, maxDepth, propertiesToIgnore, hashCodes, textOrderArrayElements });
                     }
                     jw.WriteEndArray();
                     break;
@@ -87,10 +86,10 @@ namespace EDennis.JsonUtils {
                     if (type.IsIDictionary()) {
                         var dict = obj as IDictionary;
                         foreach (var key in dict.Keys)
-                            Serialize(dict[key], key.ToString(), jw, maxDepth, propertiesToIgnore, hashCodes, stream);
+                            Serialize(dict[key], key.ToString(), jw, maxDepth, propertiesToIgnore, hashCodes, textOrderArrayElements);
                     } else {
                         foreach (var prop in type.GetProperties())
-                            Serialize(prop.GetValue(obj), prop.Name, jw, maxDepth, propertiesToIgnore, hashCodes, stream);
+                            Serialize(prop.GetValue(obj), prop.Name, jw, maxDepth, propertiesToIgnore, hashCodes, textOrderArrayElements);
                     }
                     jw.WriteEndObject();
                     break;
@@ -99,9 +98,24 @@ namespace EDennis.JsonUtils {
             }
         }
 
-        protected static void SerializeEnumerable<T>(IEnumerable<T> obj, string propertyName, Utf8JsonWriter jw, int maxDepth, string[] propertiesToIgnore, List<int> hashCodes, MemoryStream stream) {
-            foreach (var item in obj)
-                Serialize(item, null, jw, maxDepth, propertiesToIgnore, hashCodes, stream);
+        protected static void SerializeEnumerable<T>(IEnumerable<T> obj, string propertyName, Utf8JsonWriter jw, int maxDepth, string[] propertiesToIgnore, List<int> hashCodes, bool textOrderArrayElements = false) {
+            if (textOrderArrayElements) {
+                Dictionary<string, T> dict = new Dictionary<string, T>(); 
+                foreach (var item in obj) {
+                    using var stream2 = new MemoryStream();
+                    using var jw2 = new Utf8JsonWriter(stream2);
+                    Serialize(item, null, jw2, maxDepth - jw.CurrentDepth, propertiesToIgnore, new List<int>(), textOrderArrayElements);
+                    jw2.Flush();
+                    string json = Encoding.UTF8.GetString(stream2.ToArray());
+                    dict.Add(json, item);
+                }
+                var ordered = dict.OrderBy(x => x.Key).Select(x=>x.Value);
+                foreach (var item in ordered)
+                    Serialize(item, null, jw, maxDepth, propertiesToIgnore, hashCodes, textOrderArrayElements);
+            } else {
+                foreach (var item in obj)
+                    Serialize(item, null, jw, maxDepth, propertiesToIgnore, hashCodes, textOrderArrayElements);
+            }
         }
 
 

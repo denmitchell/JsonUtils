@@ -298,9 +298,23 @@ namespace EDennis.JsonUtils.Tests {
             };
             var orderedPersons = ps.OrderBy(x => x.Key);
             var actual = SafeJsonSerializer.Serialize(orderedPersons);
-            var expected = JsonSerializer.Serialize(orderedPersons);
+            var expected = JsonSerializer.Serialize(orderedPersons, new JsonSerializerOptions { WriteIndented = true });
+
+            Assert.Equal(expected, actual);
 
         }
+
+        [Fact]
+        public void TestTextOrderedEnumerable() {
+            persons[0].Id = 3;
+            var ps = new Person[] {persons[0], persons[1] };
+            var ps2 = new Person[] { persons[1], persons[0] };
+            var actual = SafeJsonSerializer.Serialize(ps,99,true,null,true);
+            var expected = JsonSerializer.Serialize(ps2, new JsonSerializerOptions { WriteIndented = true });
+
+            Assert.Equal(expected, actual);
+        }
+
 
     }
 }
