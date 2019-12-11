@@ -245,6 +245,8 @@ namespace EDennis.JsonUtils.Tests {
             public IEnumerable<Person> Persons { get; set; }
             public List<Dictionary<string, Person>> PersonDicts { get; set; }
 
+            public IOrderedEnumerable<KeyValuePair<string,Person>> PersonDictOrdered { get; set; }
+
         }
 
 
@@ -254,6 +256,8 @@ namespace EDennis.JsonUtils.Tests {
             var personB = JsonSerializer.Deserialize<Person>(JsonSerializer.Serialize(persons[0]));
             var personC = JsonSerializer.Deserialize<Person>(JsonSerializer.Serialize(persons[1]));
             var personD = JsonSerializer.Deserialize<Person>(JsonSerializer.Serialize(persons[1]));
+            var personE = JsonSerializer.Deserialize<Person>(JsonSerializer.Serialize(persons[0]));
+            var personF = JsonSerializer.Deserialize<Person>(JsonSerializer.Serialize(persons[1]));
             var co = new ComplexObject() {
                 PersonDict = new Dictionary<string, Person> {
                     { "Moe", personA },
@@ -265,7 +269,11 @@ namespace EDennis.JsonUtils.Tests {
                         { "Moe", personB },
                         { "Larry", personD }
                     }
-                }
+                },
+                PersonDictOrdered = (new Dictionary<string, Person> {
+                    { "Moe", personE },
+                    { "Larry", personF }
+                }).OrderBy(x => x.Key)
             };
 
             var actual = SafeJsonSerializer.Serialize(co);

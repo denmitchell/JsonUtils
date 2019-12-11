@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 
@@ -10,7 +11,7 @@ namespace EDennis.JsonUtils {
 
     public partial class SafeJsonSerializer {
 
-        public static string Serialize(object obj, int maxDepth = 99, bool indented = true, string[] propertiesToIgnore = null) {
+        public static string Serialize<T>(T obj, int maxDepth = 99, bool indented = true, string[] propertiesToIgnore = null) {
             var jsonWriterOptions = new JsonWriterOptions { Indented = indented };
             using var stream = new MemoryStream();
             using var jw = new Utf8JsonWriter(stream, jsonWriterOptions);
@@ -20,7 +21,8 @@ namespace EDennis.JsonUtils {
             return json;
         }
 
-        protected static void Serialize(object obj, string propertyName, Utf8JsonWriter jw, int maxDepth, string[] propertiesToIgnore, List<int> hashCodes, MemoryStream stream) {
+
+        protected static void Serialize<T>(T obj, string propertyName, Utf8JsonWriter jw, int maxDepth, string[] propertiesToIgnore, List<int> hashCodes, MemoryStream stream) {
             if (jw.CurrentDepth > maxDepth)
                 return;
             if (propertiesToIgnore.Contains(propertyName))
@@ -68,8 +70,14 @@ namespace EDennis.JsonUtils {
                         foreach (var item in oList)
                             Serialize(item, null, jw, maxDepth, propertiesToIgnore, hashCodes, stream);
                     } catch {
-                        using var jw2 = new StreamWriter(stream,null,-1,true);
-                        jw2.Write(JsonSerializer.Serialize(obj, new JsonSerializerOptions { MaxDepth = maxDepth }));
+                        
+                        //upon failure, use reflection and generic SerializeEnumerable method
+                        Type[] args = obj.GetType().GetGenericArguments();
+                        Type itemType = args[0];
+
+                        MethodInfo method = typeof(SafeJsonSerializer).GetMethod("SerializeEnumerable",BindingFlags.Static|BindingFlags.NonPublic);
+                        MethodInfo genericM = method.MakeGenericMethod(itemType);
+                        genericM.Invoke(null, new object[] { obj, propertyName, jw, maxDepth, propertiesToIgnore, hashCodes, stream });
                     }
                     jw.WriteEndArray();
                     break;
@@ -89,6 +97,11 @@ namespace EDennis.JsonUtils {
                 default:
                     return;
             }
+        }
+
+        protected static void SerializeEnumerable<T>(IEnumerable<T> obj, string propertyName, Utf8JsonWriter jw, int maxDepth, string[] propertiesToIgnore, List<int> hashCodes, MemoryStream stream) {
+            foreach (var item in obj)
+                Serialize(item, null, jw, maxDepth, propertiesToIgnore, hashCodes, stream);
         }
 
 
