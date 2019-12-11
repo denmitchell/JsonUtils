@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp3.0</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>3.2.2</Version>
+    <Version>3.2.3</Version>
     <AssemblyVersion>3.2.3.0</AssemblyVersion>
     <FileVersion>3.2.3.0</FileVersion>
     <Description>Json serialization without self-referencing loops and with optional filtering of specified properties.</Description>
