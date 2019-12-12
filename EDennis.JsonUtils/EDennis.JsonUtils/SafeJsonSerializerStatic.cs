@@ -42,6 +42,12 @@ namespace EDennis.JsonUtils {
             if (propertyName != null)
                 jw.WritePropertyName(propertyName);
 
+
+            if (obj.GetType().IsEnum) {
+                jw.WriteStringValue(Enum.GetName(obj.GetType(),obj));
+                return;
+            }
+
             switch (jsonValueType) {
                 case JsonValueKind.Undefined:
                     if (propertyName == null)
