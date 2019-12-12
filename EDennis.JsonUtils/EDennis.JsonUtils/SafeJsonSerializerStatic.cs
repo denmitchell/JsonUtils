@@ -186,12 +186,12 @@ namespace EDennis.JsonUtils {
 
     internal static class TypeExtensions {
         internal static bool IsIEnumerable(this Type type) {
-            return type.IsGenericType && type.GetInterfaces().Contains(typeof(IEnumerable));
+            return type != typeof(string) && type.GetInterfaces().Contains(typeof(IEnumerable));
         }
         internal static bool IsIDictionary(this Type type) {
-            return type.IsGenericType &&
-                (type.GetInterfaces().Contains(typeof(IDictionary))
-                || typeof(Dictionary<,>).IsAssignableFrom(type.GetGenericTypeDefinition()));
+            return 
+                type.GetInterfaces().Contains(typeof(IDictionary))
+                || (type.IsGenericType && typeof(Dictionary<,>).IsAssignableFrom(type.GetGenericTypeDefinition()));
         }
         internal static bool IsNumber(this Type type) {
             return type == typeof(byte)
