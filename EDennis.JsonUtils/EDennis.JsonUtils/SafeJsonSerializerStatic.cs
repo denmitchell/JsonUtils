@@ -22,7 +22,7 @@ namespace EDennis.JsonUtils {
         }
 
 
-        protected static void Serialize<T>(T obj, string propertyName, Utf8JsonWriter jw, int maxDepth, string[] propertiesToIgnore, List<int> hashCodes, bool textOrderArrayElements) {
+        protected static void Serialize<T>(T obj, string propertyName, Utf8JsonWriter jw, int maxDepth, string[] propertiesToIgnore, List<int> hashCodes, bool textOrderArrayElements, bool isContainerType = false) {
             if (jw.CurrentDepth > maxDepth)
                 return;
             if (propertiesToIgnore.Contains(propertyName))
@@ -36,7 +36,8 @@ namespace EDennis.JsonUtils {
                 hashCodes.Add(hashCode);
             }
 
-
+            if (isContainerType && jsonValueType == JsonValueKind.Null)
+                return;
 
             if (propertyName != null)
                 jw.WritePropertyName(propertyName);
@@ -45,11 +46,10 @@ namespace EDennis.JsonUtils {
                 case JsonValueKind.Undefined:
                     if (propertyName == null)
                         return;
-                    else
                         jw.WriteNullValue();
                     break;
                 case JsonValueKind.Null:
-                    jw.WriteNullValue();
+                        jw.WriteNullValue();
                     break;
                 case JsonValueKind.True:
                     jw.WriteBooleanValue(true);
@@ -65,16 +65,16 @@ namespace EDennis.JsonUtils {
                     break;
                 case JsonValueKind.Array:
                     jw.WriteStartArray();
-                    try {                        
+                    try {
                         var oList = (obj as IEnumerable<object>).ToList();
                         SerializeEnumerable(oList, propertyName, jw, maxDepth, propertiesToIgnore, hashCodes, textOrderArrayElements);
                     } catch {
-                        
+
                         //upon failure, use reflection and generic SerializeEnumerable method
                         Type[] args = obj.GetType().GetGenericArguments();
                         Type itemType = args[0];
 
-                        MethodInfo method = typeof(SafeJsonSerializer).GetMethod("SerializeEnumerable",BindingFlags.Static|BindingFlags.NonPublic);
+                        MethodInfo method = typeof(SafeJsonSerializer).GetMethod("SerializeEnumerable", BindingFlags.Static | BindingFlags.NonPublic);
                         MethodInfo genericM = method.MakeGenericMethod(itemType);
                         genericM.Invoke(null, new object[] { obj, propertyName, jw, maxDepth, propertiesToIgnore, hashCodes, textOrderArrayElements });
                     }
@@ -88,8 +88,10 @@ namespace EDennis.JsonUtils {
                         foreach (var key in dict.Keys)
                             Serialize(dict[key], key.ToString(), jw, maxDepth, propertiesToIgnore, hashCodes, textOrderArrayElements);
                     } else {
-                        foreach (var prop in type.GetProperties())
-                            Serialize(prop.GetValue(obj), prop.Name, jw, maxDepth, propertiesToIgnore, hashCodes, textOrderArrayElements);
+                        foreach (var prop in type.GetProperties()) {
+                            var containerType = IsContainerType(prop.GetType());
+                            Serialize(prop.GetValue(obj), prop.Name, jw, maxDepth, propertiesToIgnore, hashCodes, textOrderArrayElements, containerType);
+                        }
                     }
                     jw.WriteEndObject();
                     break;
@@ -100,7 +102,7 @@ namespace EDennis.JsonUtils {
 
         protected static void SerializeEnumerable<T>(IEnumerable<T> obj, string propertyName, Utf8JsonWriter jw, int maxDepth, string[] propertiesToIgnore, List<int> hashCodes, bool textOrderArrayElements = false) {
             if (textOrderArrayElements) {
-                Dictionary<string, T> dict = new Dictionary<string, T>(); 
+                Dictionary<string, T> dict = new Dictionary<string, T>();
                 foreach (var item in obj) {
                     using var stream2 = new MemoryStream();
                     using var jw2 = new Utf8JsonWriter(stream2);
@@ -109,7 +111,7 @@ namespace EDennis.JsonUtils {
                     string json = Encoding.UTF8.GetString(stream2.ToArray());
                     dict.Add(json, item);
                 }
-                var ordered = dict.OrderBy(x => x.Key).Select(x=>x.Value);
+                var ordered = dict.OrderBy(x => x.Key).Select(x => x.Value);
                 foreach (var item in ordered)
                     Serialize(item, null, jw, maxDepth, propertiesToIgnore, hashCodes, textOrderArrayElements);
             } else {
@@ -119,12 +121,11 @@ namespace EDennis.JsonUtils {
         }
 
 
-
         public static JsonValueKind GetJsonValueKind(object obj) {
-            var type = obj.GetType();
             if (obj == null)
                 return JsonValueKind.Null;
-            else if (type.IsArray)
+            var type = obj.GetType();
+            if (type.IsArray)
                 return JsonValueKind.Array;
             else if (type.IsIDictionary())
                 return JsonValueKind.Object;
@@ -150,6 +151,37 @@ namespace EDennis.JsonUtils {
             else
                 return JsonValueKind.Undefined;
         }
+
+
+        public static bool IsContainerType(Type type) {
+            if (type.IsArray)
+                return true;
+            else if (type.IsIDictionary())
+                return true;
+            else if (type.IsIEnumerable())
+                return true;
+            else if (type.IsNumber())
+                return false;
+            else if (type == typeof(bool)) {
+                return false;
+            } else if (type == typeof(string) ||
+                type == typeof(DateTime) ||
+                type == typeof(DateTimeOffset) ||
+                type == typeof(TimeSpan) ||
+                type.IsPrimitive
+                )
+                return false;
+            else if ((type.GetProperties()?.Length ?? 0) > 0)
+                return true;
+            else
+                return false;
+        }
+    }
+
+    internal enum ContainerType {
+        None,
+        Object,
+        Array
     }
 
     internal static class TypeExtensions {
