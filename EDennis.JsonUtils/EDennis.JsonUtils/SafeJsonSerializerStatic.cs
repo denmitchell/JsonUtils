@@ -43,7 +43,7 @@ namespace EDennis.JsonUtils {
                 jw.WritePropertyName(propertyName);
 
 
-            if (obj.GetType().IsEnum) {
+            if (obj != null && obj.GetType().IsEnum) {
                 jw.WriteStringValue(Enum.GetName(obj.GetType(),obj));
                 return;
             }
