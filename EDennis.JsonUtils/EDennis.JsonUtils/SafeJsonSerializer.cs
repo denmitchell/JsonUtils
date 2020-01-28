@@ -82,7 +82,7 @@ namespace EDennis.JsonUtils {
             //handle Dictionary
             if (obj is IDictionary) {
                 SerializeDictionary(obj, obj.GetHashCode(), null);
-            //handle IEnumerable and IOrderedEnumerable
+                //handle IEnumerable and IOrderedEnumerable
             } else if (obj is IEnumerable) {
                 try {
                     var oList = (obj as IEnumerable<object>).ToList();
@@ -317,7 +317,7 @@ namespace EDennis.JsonUtils {
                     Type t = prop.ElementType;
                     SerializeList(prop.Value as IList, prop.Value.GetHashCode(), prop.Name);
                     //handle a user object
-                } else if (prop.IsObject && prop.Value != null) {
+                } else if (prop.IsUserObject && prop.Value != null) {
                     SerializeObject(prop.Value, prop.Value.GetHashCode(), prop.Name);
                     //handle a formatted string value
                 } else if (prop.FormattedValue != null && !_propertiesToIgnore.Contains(prop.Name)) {
@@ -332,8 +332,20 @@ namespace EDennis.JsonUtils {
                     } catch (Exception ex) {
                         throw new ApplicationException($"Exception trying to serialize to JSON the value {prop.FormattedValue} for {propertyName}: {ex.Message}");
                     }
+                    //handle projections
+                } else if (prop.IsProjection) {
+                    try {
+                        jw.WritePropertyName(prop.Name);
+                    } catch (Exception ex) {
+                        throw new ApplicationException($"Exception trying to write property name {propertyName} to JSON: {ex.Message}");
+                    }
+                    try {
+                        jw.WriteRawValue(System.Text.Json.JsonSerializer.Serialize(prop.Value));
+                    } catch (Exception ex) {
+                        throw new ApplicationException($"Exception trying to serialize to JSON the value {prop.Value.ToString()} for {propertyName}: {ex.Message}");
+                    }
                     //handle all other values
-                } else if (!prop.IsCollection && !prop.IsArray && !prop.IsObject && !_propertiesToIgnore.Contains(prop.Name)) {
+                } else if (!prop.IsCollection && !prop.IsArray && !prop.IsUserObject && !_propertiesToIgnore.Contains(prop.Name)) {
                     try {
                         jw.WritePropertyName(prop.Name);
                     } catch (Exception ex) {
@@ -342,7 +354,11 @@ namespace EDennis.JsonUtils {
                     try {
                         jw.WriteValue(prop.Value);
                     } catch (Exception ex) {
-                        throw new ApplicationException($"Exception trying to serialize to JSON the value {prop.Value.ToString()} for {propertyName}: {ex.Message}");
+                        try {
+                            jw.WriteRawValue(System.Text.Json.JsonSerializer.Serialize(prop.Value));
+                        } catch {
+                            throw new ApplicationException($"Exception trying to serialize to JSON the value {prop.Value.ToString()} for {propertyName}: {ex.Message}");
+                        }
                     }
                 }
             }
@@ -424,7 +440,12 @@ namespace EDennis.JsonUtils {
                     }
 
                     //determine if the property is a user object type
-                    prop.IsObject = (prop.Type.IsClass && !prop.Type.FullName.StartsWith("System."));
+                    prop.IsUserObject = (prop.Type.IsClass && !prop.Type.FullName.StartsWith("System."));
+
+
+                    var valueType = prop.Value?.GetType();
+                    //determine if property is a projection
+                    prop.IsProjection = prop.Type == typeof(object) && valueType != null && valueType.IsSpecialName && valueType.BaseType.Name == "Projection";
 
                     //add the property
                     Add(prop);
@@ -437,7 +458,7 @@ namespace EDennis.JsonUtils {
             /// </summary>
             /// <returns>true if object has a list or object property; false, otherwise</returns>
             public bool HasNavigationProperties() {
-                return (this.Where(p => p.IsCollection || p.IsObject).Count() > 0);
+                return (this.Where(p => p.IsCollection || p.IsUserObject).Count() > 0);
             }
 
 
@@ -493,7 +514,8 @@ namespace EDennis.JsonUtils {
             public bool IsCollection { get; set; }
             public bool IsDictionary { get; set; }
             public bool IsArray { get; set; }
-            public bool IsObject { get; set; }
+            public bool IsUserObject { get; set; }
+            public bool IsProjection { get; set; }
             public bool IsNullable { get; set; }
             public object Value { get; set; }
             public string FormattedValue { get; set; }

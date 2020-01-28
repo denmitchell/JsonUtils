@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -39,12 +40,15 @@ namespace EDennis.JsonUtils {
             if (isContainerType && jsonValueType == JsonValueKind.Null)
                 return;
 
-            if (propertyName != null)
+            if (propertyName != null) {
                 jw.WritePropertyName(propertyName);
+                //Debug.WriteLine($"jw.WritePropertyName({propertyName})");
+            }
 
 
             if (obj != null && obj.GetType().IsEnum) {
                 jw.WriteStringValue(Enum.GetName(obj.GetType(),obj));
+                //Debug.WriteLine($"jw.WriteStringValue({Enum.GetName(obj.GetType(),obj)})");
                 return;
             }
 
@@ -52,25 +56,34 @@ namespace EDennis.JsonUtils {
                 case JsonValueKind.Undefined:
                     if (propertyName == null)
                         return;
-                        jw.WriteNullValue();
+                    jw.WriteNullValue();
+                    //Debug.WriteLine($"jw.WriteNullValue()");
                     break;
                 case JsonValueKind.Null:
-                        jw.WriteNullValue();
+                    jw.WriteNullValue();
+                    //Debug.WriteLine($"jw.WriteNullValue()");
                     break;
                 case JsonValueKind.True:
                     jw.WriteBooleanValue(true);
+                    //Debug.WriteLine($"jw.WriteBooleanValue(true)");
                     break;
                 case JsonValueKind.False:
                     jw.WriteBooleanValue(false);
+                    Debug.WriteLine($"jw.WriteBooleanValue(false)");
                     break;
                 case JsonValueKind.String:
-                    jw.WriteStringValue(JsonSerializer.Serialize(obj).Replace("\u0022", ""));
+                    var result = JsonSerializer.Serialize(obj).Replace("\u0022", "");
+                    jw.WriteStringValue(result);
+                    //Debug.WriteLine($"jw.WriteStringValue({result})");
                     break;
                 case JsonValueKind.Number:
-                    jw.WriteNumberValue(Convert.ToDecimal(obj));
+                    var num = Convert.ToDecimal(obj);
+                    jw.WriteNumberValue(num);
+                    //Debug.WriteLine($"jw.WriteNumberValue({num})");
                     break;
                 case JsonValueKind.Array:
                     jw.WriteStartArray();
+                    //Debug.WriteLine($"jw.WriteStartArray()");
                     try {
                         var oList = (obj as IEnumerable<object>).ToList();
                         SerializeEnumerable(oList, propertyName, jw, maxDepth, propertiesToIgnore, hashCodes, textOrderArrayElements);
@@ -85,21 +98,26 @@ namespace EDennis.JsonUtils {
                         genericM.Invoke(null, new object[] { obj, propertyName, jw, maxDepth, propertiesToIgnore, hashCodes, textOrderArrayElements });
                     }
                     jw.WriteEndArray();
+                    //Debug.WriteLine($"jw.WriteEndArray()");
                     break;
                 case JsonValueKind.Object:
                     jw.WriteStartObject();
+                    //Debug.WriteLine($"jw.WriteStartObject()");
                     var type = obj.GetType();
                     if (type.IsIDictionary()) {
                         var dict = obj as IDictionary;
                         foreach (var key in dict.Keys)
                             Serialize(dict[key], key.ToString(), jw, maxDepth, propertiesToIgnore, hashCodes, textOrderArrayElements);
                     } else {
-                        foreach (var prop in type.GetProperties()) {
-                            var containerType = IsContainerType(prop.GetType());
-                            Serialize(prop.GetValue(obj), prop.Name, jw, maxDepth, propertiesToIgnore, hashCodes, textOrderArrayElements, containerType);
+                        foreach (var prop in type.GetProperties().Where(t=>t.DeclaringType.FullName != "System.Linq.Dynamic.Core.DynamicClass")) {
+                            //try {
+                                var containerType = IsContainerType(prop.PropertyType);
+                                Serialize(prop.GetValue(obj), prop.Name, jw, maxDepth, propertiesToIgnore, hashCodes, textOrderArrayElements, containerType);
+                            //} catch { }
                         }
                     }
                     jw.WriteEndObject();
+                    //Debug.WriteLine($"jw.WriteEndObject()");
                     break;
                 default:
                     return;
@@ -178,6 +196,8 @@ namespace EDennis.JsonUtils {
                 )
                 return false;
             else if ((type.GetProperties()?.Length ?? 0) > 0)
+                return true;
+            else if (type == typeof(object))
                 return true;
             else
                 return false;

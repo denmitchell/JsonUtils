@@ -3,11 +3,11 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp3.0</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>3.2.7</Version>
-    <AssemblyVersion>3.2.7.0</AssemblyVersion>
-    <FileVersion>3.2.7.0</FileVersion>
+    <Version>3.2.9</Version>
+    <AssemblyVersion>3.2.9.0</AssemblyVersion>
+    <FileVersion>3.2.9.0</FileVersion>
     <Description>Json serialization without self-referencing loops and with optional filtering of specified properties.</Description>
-    <PackageReleaseNotes>Fix bug with handling nulls (introduced by enum feature)</PackageReleaseNotes>
+    <PackageReleaseNotes>Some additional support for Projection types</PackageReleaseNotes>
     <PackageIcon>icon.png</PackageIcon>
     <!--<PackageIconUrl>https://avatars0.githubusercontent.com/u/2938333?s=400&amp;v=4</PackageIconUrl>-->
     <Copyright>Dennis Mitchell, 2019</Copyright>
