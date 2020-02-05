@@ -84,10 +84,23 @@ namespace EDennis.JsonUtils {
                 case JsonValueKind.Array:
                     jw.WriteStartArray();
                     //Debug.WriteLine($"jw.WriteStartArray()");
+
                     try {
-                        var oList = (obj as IEnumerable<object>).ToList();
-                        SerializeEnumerable(oList, propertyName, jw, maxDepth, propertiesToIgnore, hashCodes, textOrderArrayElements);
-                    } catch {
+                        List<object> list = new List<object>();
+                        if (typeof(IEnumerable).IsAssignableFrom(obj.GetType())) {
+                            IEnumerable items = (IEnumerable)obj;
+                            foreach (var item in items)
+                                list.Add(item);
+                        }
+                        else if (obj is IEnumerable<object>)
+                            foreach (var item in obj as IEnumerable<object>)
+                                list.Add(item);
+                        else if (obj is IOrderedEnumerable<object>)
+                            foreach (var item in obj as IOrderedEnumerable<object>)
+                                list.Add(item);
+
+                        SerializeEnumerable(list, propertyName, jw, maxDepth, propertiesToIgnore, hashCodes, textOrderArrayElements);
+                    } catch(Exception ex) {
 
                         //upon failure, use reflection and generic SerializeEnumerable method
                         Type[] args = obj.GetType().GetGenericArguments();

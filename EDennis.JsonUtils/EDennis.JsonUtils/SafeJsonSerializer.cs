@@ -414,7 +414,7 @@ namespace EDennis.JsonUtils {
                     if (format != null)
                         try {
                             prop.FormattedValue = String.Format(format, info.GetValue(obj));
-                        } catch (FormatException) {
+                        } catch (FormatException fe) {
                             string msg = $"The format specified for {obj.GetType().Name}.{prop.Name} ({format}) is invalid.  Please check the syntax.";
                             throw new FormatException(msg);
                         }
